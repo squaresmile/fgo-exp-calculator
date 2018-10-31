@@ -3,3 +3,4 @@ dash-renderer
 dash-core-components
 dash-html-components
 gunicorn
+pandas
