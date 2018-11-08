@@ -53,9 +53,9 @@ app.layout = html.Div(children=[
     
     html.H1(children='FGO EXP Calculator'),
     
-    html.Div(children='From level:'), dcc.Input(id='from-level', value=1, type='number', min=1, max=100),
-    html.Div(children='To level:'), dcc.Input(id='to-level', value=50, type='number', min=1, max=100),
-    html.Div(children='Residual EXP:'), dcc.Input(id='residual-exp', value=0, type='number', min=1, max=100),
+    html.Div(children='From level:'), dcc.Input(id='from-level', value=1, type='number', min=0, max=100),
+    html.Div(children='To level:'), dcc.Input(id='to-level', value=50, type='number', min=0, max=100),
+    html.Div(children='Residual EXP:'), dcc.Input(id='residual-exp', value=0, type='number', min=0, max=1456500),
 
     html.Div(id='exp-needed')
 ], className="container"
