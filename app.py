@@ -27,16 +27,24 @@ def exp_calc(from_level, to_level, residual=0):
             exp = EXP_df.iloc[from_level+1:to_level, 1].sum() + residual
         return exp
 
-def generate_table(dataframe, max_rows=10):
+def generate_table(dataframe):
     return html.Table(
         # Header
-        [html.Tr([html.Th(col) for col in dataframe.columns])] +
+        [html.Tr([html.Th(col, style={'textAlign': 'center'}) for col in dataframe.columns])] +
 
         # Body
         [html.Tr([
-            html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-        ]) for i in range(min(len(dataframe), max_rows))]
+            col_align(dataframe.iloc[i][col], col) for col in dataframe.columns
+        ]) for i in range(len(dataframe))]
     )
+
+def col_align(text, col):
+    if col == "EXP":
+        return html.Td(text, style={'textAlign': 'right'})
+    elif col in ["Class Embers", "Non-class Embers"]:
+        return html.Td(text, style={'textAlign': 'center'})
+    else:
+        return html.Td(text)
 
 app = dash.Dash(__name__)
 server = app.server
