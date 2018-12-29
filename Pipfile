@@ -12,6 +12,8 @@ dash-core-components = "*"
 dash-html-components = "*"
 gunicorn = "*"
 pandas = "*"
+flask_caching  = "*"
+redis = "*"
 
 [requires]
 python_version = "3.6"

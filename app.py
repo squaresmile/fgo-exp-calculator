@@ -2,6 +2,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
+from flask_caching import Cache
 import numpy as np
 
 EXP_df = pd.read_csv("level.csv")
@@ -47,6 +48,12 @@ def col_align(text, col):
         return html.Td(text)
 
 app = dash.Dash(__name__)
+cache = Cache(app.server, config={
+    'CACHE_TYPE': 'redis',
+    'CACHE_REDIS_URL': 'localhost:6379'
+})
+app.config.suppress_callback_exceptions = True
+timeout = 86400
 server = app.server
 
 app.layout = html.Div(children=[
@@ -66,6 +73,7 @@ app.layout = html.Div(children=[
     [dash.dependencies.Input('from-level', 'value'),
      dash.dependencies.Input('to-level', 'value'),
      dash.dependencies.Input('residual-exp', 'value')])
+@cache.memoize(timeout=timeout)
 def update_exp_text(from_level, to_level, residual_exp):
     if from_level > to_level:
         return "From level can\'t be higher than to level."
