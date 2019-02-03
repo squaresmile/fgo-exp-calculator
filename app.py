@@ -50,7 +50,7 @@ def col_align(text, col):
 app = dash.Dash(__name__)
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_URL': 'localhost:6379'
+    'CACHE_REDIS_URL': 'redis://localhost:6379'
 })
 app.config.suppress_callback_exceptions = True
 timeout = 86400
