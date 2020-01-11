@@ -47,7 +47,7 @@ def col_align(text, col):
     else:
         return html.Td(text)
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, url_base_pathname="/exp-calculator/")
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'redis',
     'CACHE_REDIS_URL': 'redis://localhost:6379'
