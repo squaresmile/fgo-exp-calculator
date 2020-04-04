@@ -56,7 +56,11 @@ def col_align(text, col):
         return html.Td(text)
 
 
-app = dash.Dash(__name__, url_base_pathname="/exp-calculator/")
+app = dash.Dash(
+    __name__,
+    url_base_pathname="/exp-calculator/",
+    meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
+)
 cache = Cache(
     app.server,
     config={"CACHE_TYPE": "redis", "CACHE_REDIS_URL": "redis://localhost:6379"},
@@ -67,7 +71,7 @@ server = app.server
 
 app.layout = html.Div(
     children=[
-        html.H1(children="FGO EXP Calculator"),
+        html.H2(children="FGO EXP Calculator"),
         html.Div(children="From level:"),
         dcc.Input(id="from-level", value=1, type="number", min=0, max=100),
         html.Div(children="To level:"),
