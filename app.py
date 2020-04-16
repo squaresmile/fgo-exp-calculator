@@ -98,7 +98,6 @@ app.layout = html.Div(
 def update_exp_text(
     from_level: int, to_level: int, residual_exp: int
 ) -> Union[str, html.Table]:
-    print(f"{from_level=} {to_level=} {residual_exp=}")
     if from_level is None or to_level is None:
         return "Plese enter an integer not bigger than 100."
     elif from_level > to_level:
