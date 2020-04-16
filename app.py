@@ -1,53 +1,57 @@
+import json
+from math import ceil
+from typing import Dict, List, TypedDict, Union
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import pandas as pd
 from flask_caching import Cache
-import numpy as np
 
-EXP_df = pd.read_csv("level.csv")
-TABLE = [["Full EXP", 0, 0, 0], ["1/2 EXP", 0, 0, 0], ["1/3 EXP", 0, 0, 0]]
-OUTPUT_df = pd.DataFrame(
-    TABLE, columns=["How much", "EXP", "Class Embers", "Non-class Embers"]
-)
+
+with open("level_exp.json", "r", encoding="utf-8") as f:
+    EXP_LEVEL: Dict[str, int] = json.load(f)
+ROWS = ["Full EXP", "1/2 EXP", "1/3 EXP"]
 CLASS_EXP = 32400
 NON_CLASS_EXP = 27000
 
 
-def exp_calc(from_level, to_level, residual=0):
+class output_column(TypedDict):
+    name: str
+    values: List[str]
+
+
+def exp_calc(from_level: int, to_level: int, residual: int = 0) -> int:
     if from_level == to_level:
         return 0
     else:
         if residual == 0:
-            exp = EXP_df.iloc[from_level:to_level, 1].sum()
+            exp = EXP_LEVEL[str(to_level)] - EXP_LEVEL[str(from_level)]
         else:
-            exp = EXP_df.iloc[from_level + 1 : to_level, 1].sum() + residual
+            exp = EXP_LEVEL[str(to_level)] - EXP_LEVEL[str(from_level + 1)] + residual
         return exp
 
 
-def generate_table(dataframe):
+def generate_table(dataframe: List[output_column]) -> html.Table:
     return html.Table(
         # Header
         [
             html.Tr(
                 [
-                    html.Th(col, style={"textAlign": "center"})
-                    for col in dataframe.columns
+                    html.Th(col["name"], style={"textAlign": "center"})
+                    for col in dataframe
                 ]
             )
         ]
         +
         # Body
         [
-            html.Tr(
-                [col_align(dataframe.iloc[i][col], col) for col in dataframe.columns]
-            )
-            for i in range(len(dataframe))
+            html.Tr([col_align(col["values"][i], col["name"]) for col in dataframe])
+            for i in range(len(ROWS))
         ]
     )
 
 
-def col_align(text, col):
+def col_align(text: str, col: str) -> html.Td:
     if col == "EXP":
         return html.Td(text, style={"textAlign": "right"})
     elif col in ["Class Embers", "Non-class Embers"]:
@@ -65,17 +69,15 @@ cache = Cache(
     app.server,
     config={"CACHE_TYPE": "redis", "CACHE_REDIS_URL": "redis://localhost:6379"},
 )
-app.config.suppress_callback_exceptions = True
-timeout = 86400
 server = app.server
 
 app.layout = html.Div(
     children=[
         html.H2(children="FGO EXP Calculator"),
         html.Div(children="From level:"),
-        dcc.Input(id="from-level", value=1, type="number", min=0, max=100),
+        dcc.Input(id="from-level", value=1, type="number", min=0, max=100, step=1),
         html.Div(children="To level:"),
-        dcc.Input(id="to-level", value=50, type="number", min=0, max=100),
+        dcc.Input(id="to-level", value=50, type="number", min=0, max=100, step=1),
         html.Div(children="Residual EXP:"),
         dcc.Input(id="residual-exp", value=0, type="number", min=0, max=1456500),
         html.Div(id="exp-needed"),
@@ -92,18 +94,38 @@ app.layout = html.Div(
         dash.dependencies.Input("residual-exp", "value"),
     ],
 )
-@cache.memoize(timeout=timeout)
-def update_exp_text(from_level, to_level, residual_exp):
-    if from_level > to_level:
+@cache.memoize(timeout=86400)
+def update_exp_text(
+    from_level: int, to_level: int, residual_exp: int
+) -> Union[str, html.Table]:
+    print(f"{from_level=} {to_level=} {residual_exp=}")
+    if from_level is None or to_level is None:
+        return "Plese enter an integer not bigger than 100."
+    elif from_level > to_level:
         return "From level can't be higher than to level."
     else:
+        if residual_exp is None:
+            residual_exp = 0
+        output_table: List[output_column] = []
         exp_needed = exp_calc(from_level, to_level, residual_exp)
-        exp = np.array([exp_needed, exp_needed / 2, exp_needed / 3])
-        OUTPUT_df["EXP"] = exp
-        OUTPUT_df["Class Embers"] = np.ceil(exp / CLASS_EXP)
-        OUTPUT_df["Non-class Embers"] = np.ceil(exp / NON_CLASS_EXP)
-        OUTPUT_df["EXP"] = OUTPUT_df["EXP"].apply(lambda x: "{:,.0f}".format(x))
-        return generate_table(OUTPUT_df)
+        exp_list = (exp_needed, exp_needed / 2, exp_needed / 3)
+        output_table.append({"name": "How much", "values": ROWS})
+        output_table.append(
+            {
+                "name": "Class Embers",
+                "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
+            }
+        )
+        output_table.append(
+            {
+                "name": "Non-class Embers",
+                "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
+            }
+        )
+        output_table.append(
+            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]}
+        )
+        return generate_table(output_table)
 
 
 if __name__ == "__main__":
