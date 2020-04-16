@@ -1,3 +1,5 @@
 Pipfile.lock
 .venv/
 __pycache__/
+.vscode/
+.mypy_cache/
