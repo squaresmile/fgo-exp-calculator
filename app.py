@@ -110,6 +110,9 @@ def update_exp_text(
         exp_list = (exp_needed, exp_needed / 2, exp_needed / 3)
         output_table.append({"name": "How much", "values": ROWS})
         output_table.append(
+            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]}
+        )
+        output_table.append(
             {
                 "name": "Class Embers",
                 "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
@@ -120,9 +123,6 @@ def update_exp_text(
                 "name": "Non-class Embers",
                 "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
             }
-        )
-        output_table.append(
-            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]}
         )
         return generate_table(output_table)
 
