@@ -5,7 +5,6 @@ from typing import Dict, List, TypedDict, Union
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from flask_caching import Cache
 
 
 with open("level_exp.json", "r", encoding="utf-8") as f:
@@ -65,10 +64,6 @@ app = dash.Dash(
     url_base_pathname="/exp-calculator/",
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
 )
-cache = Cache(
-    app.server,
-    config={"CACHE_TYPE": "redis", "CACHE_REDIS_URL": "redis://localhost:6379"},
-)
 server = app.server
 
 app.layout = html.Div(
@@ -94,7 +89,6 @@ app.layout = html.Div(
         dash.dependencies.Input("residual-exp", "value"),
     ],
 )
-@cache.memoize(timeout=86400)
 def update_exp_text(
     from_level: int, to_level: int, residual_exp: int
 ) -> Union[str, html.Table]:
