@@ -1,16 +1,23 @@
+import urllib.request
 import json
 from math import ceil
-from typing import Dict, List, TypedDict, Union
+from typing import Dict, List, TypedDict, Union, Optional
 
 import dash
 from dash import dcc, html
 
 
-with open("level_exp.json", "r", encoding="utf-8") as f:
-    EXP_LEVEL: Dict[str, int] = json.load(f)
+with urllib.request.urlopen(
+    "https://api.atlasacademy.io/nice/JP/servant/252"
+) as response:
+    data = json.loads(response.read())
+EXP_LEVEL: Dict[str, int] = {str(i + 1): exp for i, exp in enumerate(data["expGrowth"])}
+
 ROWS = ["Full EXP", "1/2 EXP", "1/3 EXP"]
-CLASS_EXP = 32400
-NON_CLASS_EXP = 27000
+CLASS_EXP = 32_400
+NON_CLASS_EXP = 27_000
+CLASS_5_EXP = 97_200
+NON_CLASS_5_EXP = 81_000
 
 
 class output_column(TypedDict):
@@ -52,7 +59,12 @@ def generate_table(dataframe: List[output_column]) -> html.Table:
 def col_align(text: str, col: str) -> html.Td:
     if col == "EXP":
         return html.Td(text, style={"textAlign": "right"})
-    elif col in ["Class Embers", "Non-class Embers"]:
+    elif col in [
+        "4☆ Class Embers",
+        "4☆ Non-class Embers",
+        "5☆ Class Embers",
+        "5☆ Non-class Embers",
+    ]:
         return html.Td(text, style={"textAlign": "center"})
     else:
         return html.Td(text)
@@ -69,9 +81,9 @@ app.layout = html.Div(
     children=[
         html.H2(children="FGO EXP Calculator"),
         html.Div(children="From level:"),
-        dcc.Input(id="from-level", value=1, type="number", min=0, max=100, step=1),
+        dcc.Input(id="from-level", value=1, type="number", min=0, max=120, step=1),
         html.Div(children="To level:"),
-        dcc.Input(id="to-level", value=50, type="number", min=0, max=100, step=1),
+        dcc.Input(id="to-level", value=50, type="number", min=0, max=120, step=1),
         html.Div(children="Residual EXP:"),
         dcc.Input(id="residual-exp", value=0, type="number", min=0, max=1456500),
         html.Div(id="exp-needed"),
@@ -89,8 +101,8 @@ app.layout = html.Div(
     ],
 )
 def update_exp_text(
-    from_level: int, to_level: int, residual_exp: int
-) -> Union[str, html.Table]:
+    from_level: Optional[int], to_level: Optional[int], residual_exp: Optional[int]
+) -> Union[str, List[html.Table]]:
     if from_level is None or to_level is None:
         return "Plese enter an integer not bigger than 100."
     elif from_level > to_level:
@@ -98,26 +110,33 @@ def update_exp_text(
     else:
         if residual_exp is None:
             residual_exp = 0
-        output_table: List[output_column] = []
         exp_needed = exp_calc(from_level, to_level, residual_exp)
         exp_list = (exp_needed, exp_needed / 2, exp_needed / 3)
-        output_table.append({"name": "How much", "values": ROWS})
-        output_table.append(
-            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]}
-        )
-        output_table.append(
+        output_table_4: List[output_column] = [
+            {"name": "How much", "values": ROWS},
+            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]},
             {
-                "name": "Class Embers",
-                "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
-            }
-        )
-        output_table.append(
+                "name": "4☆ Class Embers",
+                "values": [f"{ceil(exp / CLASS_EXP):,.0f}" for exp in exp_list],
+            },
             {
-                "name": "Non-class Embers",
-                "values": [f"{ceil(exp / CLASS_EXP)}" for exp in exp_list],
-            }
-        )
-        return generate_table(output_table)
+                "name": "4☆ Non-class Embers",
+                "values": [f"{ceil(exp / NON_CLASS_EXP):,.0f}" for exp in exp_list],
+            },
+        ]
+        output_table_5: List[output_column] = [
+            {"name": "How much", "values": ROWS},
+            {"name": "EXP", "values": [f"{exp:,.0f}" for exp in exp_list]},
+            {
+                "name": "5☆ Class Embers",
+                "values": [f"{ceil(exp / CLASS_5_EXP):,.0f}" for exp in exp_list],
+            },
+            {
+                "name": "5☆ Non-class Embers",
+                "values": [f"{ceil(exp / NON_CLASS_5_EXP):,.0f}" for exp in exp_list],
+            },
+        ]
+        return [generate_table(output_table_4), generate_table(output_table_5)]
 
 
 if __name__ == "__main__":
